@@ -1,6 +1,6 @@
 import cv2
 import os
-from balloonDetector import detectFromPaths
+from BalloonDetector import detectFromPaths
 
 
 def main():
