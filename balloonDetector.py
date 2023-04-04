@@ -133,3 +133,7 @@ def detectFromPaths(paths):
                                 break
 
     return images, locations, new_paths
+
+
+if __name__ == '__main__':
+    pass
