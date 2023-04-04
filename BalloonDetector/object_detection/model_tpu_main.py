@@ -26,8 +26,8 @@ from absl import flags
 import tensorflow as tf
 
 
-from object_detection import model_hparams
-from object_detection import model_lib
+from ..object_detection import model_hparams
+from ..object_detection import model_lib
 
 tf.flags.DEFINE_bool('use_tpu', True, 'Use TPUs rather than plain CPUs')
 
@@ -81,62 +81,62 @@ FLAGS = tf.flags.FLAGS
 
 
 def main(unused_argv):
-  flags.mark_flag_as_required('model_dir')
-  flags.mark_flag_as_required('pipeline_config_path')
+    flags.mark_flag_as_required('model_dir')
+    flags.mark_flag_as_required('pipeline_config_path')
 
-  tpu_cluster_resolver = (
-      tf.contrib.cluster_resolver.TPUClusterResolver(
-          tpu=[FLAGS.tpu_name],
-          zone=FLAGS.tpu_zone,
-          project=FLAGS.gcp_project))
-  tpu_grpc_url = tpu_cluster_resolver.get_master()
+    tpu_cluster_resolver = (
+        tf.contrib.cluster_resolver.TPUClusterResolver(
+            tpu=[FLAGS.tpu_name],
+            zone=FLAGS.tpu_zone,
+            project=FLAGS.gcp_project))
+    tpu_grpc_url = tpu_cluster_resolver.get_master()
 
-  config = tf.contrib.tpu.RunConfig(
-      master=tpu_grpc_url,
-      evaluation_master=tpu_grpc_url,
-      model_dir=FLAGS.model_dir,
-      tpu_config=tf.contrib.tpu.TPUConfig(
-          iterations_per_loop=FLAGS.iterations_per_loop,
-          num_shards=FLAGS.num_shards))
+    config = tf.contrib.tpu.RunConfig(
+        master=tpu_grpc_url,
+        evaluation_master=tpu_grpc_url,
+        model_dir=FLAGS.model_dir,
+        tpu_config=tf.contrib.tpu.TPUConfig(
+            iterations_per_loop=FLAGS.iterations_per_loop,
+            num_shards=FLAGS.num_shards))
 
-  kwargs = {}
-  if FLAGS.train_batch_size:
-    kwargs['batch_size'] = FLAGS.train_batch_size
+    kwargs = {}
+    if FLAGS.train_batch_size:
+        kwargs['batch_size'] = FLAGS.train_batch_size
 
-  train_and_eval_dict = model_lib.create_estimator_and_inputs(
-      run_config=config,
-      hparams=model_hparams.create_hparams(FLAGS.hparams_overrides),
-      pipeline_config_path=FLAGS.pipeline_config_path,
-      train_steps=FLAGS.num_train_steps,
-      sample_1_of_n_eval_examples=FLAGS.sample_1_of_n_eval_examples,
-      sample_1_of_n_eval_on_train_examples=(
-          FLAGS.sample_1_of_n_eval_on_train_examples),
-      use_tpu_estimator=True,
-      use_tpu=FLAGS.use_tpu,
-      num_shards=FLAGS.num_shards,
-      save_final_config=FLAGS.mode == 'train',
-      **kwargs)
-  estimator = train_and_eval_dict['estimator']
-  train_input_fn = train_and_eval_dict['train_input_fn']
-  eval_input_fns = train_and_eval_dict['eval_input_fns']
-  eval_on_train_input_fn = train_and_eval_dict['eval_on_train_input_fn']
-  train_steps = train_and_eval_dict['train_steps']
+    train_and_eval_dict = model_lib.create_estimator_and_inputs(
+        run_config=config,
+        hparams=model_hparams.create_hparams(FLAGS.hparams_overrides),
+        pipeline_config_path=FLAGS.pipeline_config_path,
+        train_steps=FLAGS.num_train_steps,
+        sample_1_of_n_eval_examples=FLAGS.sample_1_of_n_eval_examples,
+        sample_1_of_n_eval_on_train_examples=(
+            FLAGS.sample_1_of_n_eval_on_train_examples),
+        use_tpu_estimator=True,
+        use_tpu=FLAGS.use_tpu,
+        num_shards=FLAGS.num_shards,
+        save_final_config=FLAGS.mode == 'train',
+        **kwargs)
+    estimator = train_and_eval_dict['estimator']
+    train_input_fn = train_and_eval_dict['train_input_fn']
+    eval_input_fns = train_and_eval_dict['eval_input_fns']
+    eval_on_train_input_fn = train_and_eval_dict['eval_on_train_input_fn']
+    train_steps = train_and_eval_dict['train_steps']
 
-  if FLAGS.mode == 'train':
-    estimator.train(input_fn=train_input_fn, max_steps=train_steps)
+    if FLAGS.mode == 'train':
+        estimator.train(input_fn=train_input_fn, max_steps=train_steps)
 
-  # Continuously evaluating.
-  if FLAGS.mode == 'eval':
-    if FLAGS.eval_training_data:
-      name = 'training_data'
-      input_fn = eval_on_train_input_fn
-    else:
-      name = 'validation_data'
-      # Currently only a single eval input is allowed.
-      input_fn = eval_input_fns[0]
-    model_lib.continuous_eval(estimator, FLAGS.model_dir, input_fn, train_steps,
-                              name)
+    # Continuously evaluating.
+    if FLAGS.mode == 'eval':
+        if FLAGS.eval_training_data:
+            name = 'training_data'
+            input_fn = eval_on_train_input_fn
+        else:
+            name = 'validation_data'
+            # Currently only a single eval input is allowed.
+            input_fn = eval_input_fns[0]
+        model_lib.continuous_eval(estimator, FLAGS.model_dir, input_fn, train_steps,
+                                  name)
 
 
 if __name__ == '__main__':
-  tf.app.run()
+    tf.app.run()

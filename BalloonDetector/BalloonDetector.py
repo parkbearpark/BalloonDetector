@@ -9,14 +9,15 @@ import numpy as np
 import os
 import tensorflow as tf
 import cv2
-from object_detection.utils import ops as utils_ops
-from object_detection.utils import label_map_util
-from object_detection.utils import visualization_utils as vis_util
+from .object_detection.utils import ops as utils_ops
+from .object_detection.utils import label_map_util
+from .object_detection.utils import visualization_utils as vis_util
 
 
 def prepare():
     # What model to take.
-    MODEL_NAME = 'detector'
+    MODEL_NAME = os.path.join(os.path.abspath(
+        os.path.dirname(__file__)), 'detector')
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
     PATH_TO_FROZEN_GRAPH = os.path.join(
